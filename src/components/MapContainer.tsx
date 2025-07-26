@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle, MapPin } from 'lucide-react';
+import { initializeLeaflet } from '@/lib/leaflet';
 
 interface MapContainerProps {
   children?: React.ReactNode;
@@ -30,17 +31,16 @@ const MapContainer: React.FC<MapContainerProps> = ({
   useEffect(() => {
     let mounted = true;
 
-    const initMap = () => {
+    const initMap = async () => {
       if (!mounted || !mapRef.current || mapInstance.current) return;
       
-      const L = (window as any).L;
-      if (!L) {
-        setTimeout(initMap, 100);
-        return;
-      }
-
       try {
-        console.log('🗺️ Initializing map...');
+        console.log('🗺️ Initializing Leaflet...');
+        const L = await initializeLeaflet();
+        
+        if (!mounted || !mapRef.current) return;
+        
+        console.log('🗺️ Creating map instance...');
         
         const map = L.map(mapRef.current, {
           center,
@@ -84,11 +84,10 @@ const MapContainer: React.FC<MapContainerProps> = ({
       }
     };
 
-    const timer = setTimeout(initMap, 200);
+    initMap();
     
     return () => {
       mounted = false;
-      clearTimeout(timer);
       if (mapInstance.current) {
         console.log('🧹 Cleaning up map instance');
         mapInstance.current.remove();
