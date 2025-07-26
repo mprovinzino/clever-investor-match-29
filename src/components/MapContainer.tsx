@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle, MapPin } from 'lucide-react';
-import { loadLeaflet } from '@/lib/leafletLoader';
 
 interface MapContainerProps {
   children?: React.ReactNode;
@@ -29,42 +28,50 @@ const MapContainer: React.FC<MapContainerProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const initMap = () => {
-      // Check if both container and Leaflet exist
-      if (mapRef.current && (window as any).L && !mapInstance.current) {
-        try {
-          setIsLoading(true);
-          setError(null);
-          console.log('🗺️ Initializing map...');
-          
-          const L = (window as any).L;
-          const map = L.map(mapRef.current, {
-            center,
-            zoom,
-            zoomControl: true,
-            attributionControl: true
-          });
-          
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-          }).addTo(map);
-          
-          mapInstance.current = map;
-          
-          // Small delay to ensure map is fully rendered
-          setTimeout(() => {
+      if (!mounted || !mapRef.current || mapInstance.current) return;
+      
+      const L = (window as any).L;
+      if (!L) {
+        setTimeout(initMap, 100);
+        return;
+      }
+
+      try {
+        console.log('🗺️ Initializing map...');
+        
+        const map = L.map(mapRef.current, {
+          center,
+          zoom,
+          zoomControl: true,
+          attributionControl: true
+        });
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19
+        }).addTo(map);
+        
+        mapInstance.current = map;
+        
+        // Ensure map is properly sized
+        setTimeout(() => {
+          if (mounted && map) {
             map.invalidateSize();
             if (onMapReady) {
               onMapReady(map, L);
             }
             setIsLoading(false);
             console.log('✅ Map initialized successfully');
-          }, 100);
-          
-        } catch (error) {
-          console.error('❌ Map initialization failed:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          }
+        }, 100);
+        
+      } catch (error) {
+        console.error('❌ Map initialization failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        if (mounted) {
           setError(errorMessage);
           setIsLoading(false);
           
@@ -74,16 +81,13 @@ const MapContainer: React.FC<MapContainerProps> = ({
           
           toast.error(`Map failed to load: ${errorMessage}`);
         }
-      } else if (!(window as any).L) {
-        // Leaflet not ready, try again
-        setTimeout(initMap, 100);
       }
     };
 
-    // Start initialization after component mounts
     const timer = setTimeout(initMap, 200);
     
     return () => {
+      mounted = false;
       clearTimeout(timer);
       if (mapInstance.current) {
         console.log('🧹 Cleaning up map instance');
@@ -92,7 +96,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
       }
     };
   }, [center, zoom, onMapReady, onMapError]);
-
 
   const handleRetry = () => {
     setIsLoading(true);
@@ -127,7 +130,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
           <MapPin className="h-12 w-12 text-primary mb-4 animate-pulse" />
           <h3 className="text-lg font-semibold mb-2">Loading Map...</h3>
           <p className="text-sm text-muted-foreground">
-            Initializing map resources and components
+            Initializing map components
           </p>
         </div>
       </div>

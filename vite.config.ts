@@ -22,7 +22,4 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'globalThis',
   },
-  optimizeDeps: {
-    include: ['leaflet', 'leaflet-draw']
-  },
 }));
