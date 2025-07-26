@@ -29,62 +29,62 @@ const MapContainer: React.FC<MapContainerProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initializeMap = async () => {
-      if (!mapRef.current || mapInstance.current) return;
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        console.log('🗺️ Initializing map...');
-        const { L } = await loadLeaflet();
-        
-        if (!mapRef.current) {
-          console.warn('Map ref no longer available');
-          return;
-        }
-        
-        const map = L.map(mapRef.current, {
-          center,
-          zoom,
-          zoomControl: true,
-          attributionControl: true
-        });
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19
-        }).addTo(map);
-        
-        mapInstance.current = map;
-        
-        // Small delay to ensure map is fully rendered
-        setTimeout(() => {
-          map.invalidateSize();
-          if (onMapReady) {
-            onMapReady(map, L);
-          }
+    const initMap = () => {
+      // Check if both container and Leaflet exist
+      if (mapRef.current && (window as any).L && !mapInstance.current) {
+        try {
+          setIsLoading(true);
+          setError(null);
+          console.log('🗺️ Initializing map...');
+          
+          const L = (window as any).L;
+          const map = L.map(mapRef.current, {
+            center,
+            zoom,
+            zoomControl: true,
+            attributionControl: true
+          });
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+          }).addTo(map);
+          
+          mapInstance.current = map;
+          
+          // Small delay to ensure map is fully rendered
+          setTimeout(() => {
+            map.invalidateSize();
+            if (onMapReady) {
+              onMapReady(map, L);
+            }
+            setIsLoading(false);
+            console.log('✅ Map initialized successfully');
+          }, 100);
+          
+        } catch (error) {
+          console.error('❌ Map initialization failed:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          setError(errorMessage);
           setIsLoading(false);
-          console.log('✅ Map initialized successfully');
-        }, 100);
-        
-      } catch (error) {
-        console.error('❌ Map initialization failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        setError(errorMessage);
-        setIsLoading(false);
-        
-        if (onMapError) {
-          onMapError(error instanceof Error ? error : new Error(errorMessage));
+          
+          if (onMapError) {
+            onMapError(error instanceof Error ? error : new Error(errorMessage));
+          }
+          
+          toast.error(`Map failed to load: ${errorMessage}`);
         }
-        
-        toast.error(`Map failed to load: ${errorMessage}`);
+      } else if (!(window as any).L) {
+        // Leaflet not ready, try again
+        setTimeout(initMap, 100);
       }
     };
 
-    initializeMap();
+    // Start initialization after component mounts
+    const timer = setTimeout(initMap, 200);
     
     return () => {
+      clearTimeout(timer);
       if (mapInstance.current) {
         console.log('🧹 Cleaning up map instance');
         mapInstance.current.remove();
