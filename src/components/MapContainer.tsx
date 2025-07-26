@@ -36,24 +36,40 @@ const MapContainer: React.FC<MapContainerProps> = ({
         setIsLoading(true);
         setError(null);
         
+        console.log('🗺️ Initializing map...');
         const { L } = await loadLeaflet();
         
-        const map = L.map(mapRef.current).setView(center, zoom);
+        if (!mapRef.current) {
+          console.warn('Map ref no longer available');
+          return;
+        }
+        
+        const map = L.map(mapRef.current, {
+          center,
+          zoom,
+          zoomControl: true,
+          attributionControl: true
+        });
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors'
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19
         }).addTo(map);
         
         mapInstance.current = map;
         
-        if (onMapReady) {
-          onMapReady(map, L);
-        }
-        
-        setIsLoading(false);
+        // Small delay to ensure map is fully rendered
+        setTimeout(() => {
+          map.invalidateSize();
+          if (onMapReady) {
+            onMapReady(map, L);
+          }
+          setIsLoading(false);
+          console.log('✅ Map initialized successfully');
+        }, 100);
         
       } catch (error) {
-        console.error('Map initialization failed:', error);
+        console.error('❌ Map initialization failed:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setError(errorMessage);
         setIsLoading(false);
@@ -70,6 +86,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
     
     return () => {
       if (mapInstance.current) {
+        console.log('🧹 Cleaning up map instance');
         mapInstance.current.remove();
         mapInstance.current = null;
       }
