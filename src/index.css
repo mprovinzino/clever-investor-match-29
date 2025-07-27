@@ -168,9 +168,6 @@
     background: hsl(var(--popover)) !important;
   }
 
-  .leaflet-draw-toolbar {
-    margin-top: 10px !important;
-  }
 
   /* Ensure map container always has dimensions */
   [data-map-container] {

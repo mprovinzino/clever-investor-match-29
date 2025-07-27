@@ -247,7 +247,9 @@ export const InvestorProfileModal = ({ investor, isOpen, onClose, onEditInvestor
           </TabsContent>
 
           <TabsContent value="coverage" className="mt-4">
-            <CoverageMap investorId={investor.ID} editable={true} />
+            <div className="p-8 text-center text-muted-foreground">
+              Coverage map temporarily disabled for debugging
+            </div>
           </TabsContent>
 
           <TabsContent value="activity" className="mt-4">
