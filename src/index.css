@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet Map Styles - Prevent Tailwind conflicts */
+.leaflet-container {
+  font-family: inherit !important;
+  background: transparent !important;
+}
+
+.leaflet-map-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Ensure map container always has dimensions */
+[data-map-container] {
+  min-height: 400px !important;
+  width: 100% !important;
+  position: relative !important;
+  display: block !important;
+}
+
 /* Real Estate Platform Design System - Professional B2B SaaS Theme */
 
 @layer base {

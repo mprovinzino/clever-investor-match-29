@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useLayoutEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle, MapPin } from 'lucide-react';
@@ -29,13 +29,27 @@ const MapContainer: React.FC<MapContainerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 10;
 
-    const initMap = () => {
-      console.log(`🗺️ [Attempt ${retryCount + 1}] Starting map initialization...`);
+    const waitForDOMReady = () => {
+      return new Promise<void>((resolve) => {
+        if (mapRef.current && mapRef.current.offsetWidth > 0) {
+          resolve();
+        } else {
+          requestAnimationFrame(() => {
+            if (mapRef.current && mapRef.current.offsetWidth > 0) {
+              resolve();
+            } else {
+              setTimeout(() => waitForDOMReady().then(resolve), 50);
+            }
+          });
+        }
+      });
+    };
+
+    const initMap = async () => {
+      console.log('🗺️ Starting map initialization...');
       
       if (!mounted) {
         console.log('❌ Component unmounted, aborting');
@@ -46,52 +60,27 @@ const MapContainer: React.FC<MapContainerProps> = ({
         console.log('✅ Map already exists, skipping');
         return;
       }
-      
-      if (!mapRef.current) {
-        console.log('❌ Map container ref not available');
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(() => mounted && initMap(), 100);
-        } else {
-          setError('Map container not found after maximum retries');
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      console.log('🔍 Checking Leaflet availability...', { L: typeof L, Lmap: typeof L?.map });
-      
-      if (typeof L === 'undefined' || !L.map) {
-        console.error('❌ Leaflet not available');
-        setError('Leaflet library not loaded');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Check container dimensions
-      const container = mapRef.current;
-      const rect = container.getBoundingClientRect();
-      console.log('📐 Container dimensions:', {
-        offsetWidth: container.offsetWidth,
-        offsetHeight: container.offsetHeight,
-        clientWidth: container.clientWidth,
-        clientHeight: container.clientHeight,
-        rect: { width: rect.width, height: rect.height }
-      });
-      
-      if (!container.offsetWidth || !container.offsetHeight) {
-        console.warn('⚠️ Container has no dimensions, retrying...');
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(() => mounted && initMap(), 100);
-        } else {
-          setError('Map container failed to get dimensions');
-          setIsLoading(false);
-        }
-        return;
-      }
 
       try {
+        // Wait for DOM to be ready
+        await waitForDOMReady();
+        
+        if (!mounted || !mapRef.current) {
+          console.log('❌ Component unmounted or ref not available');
+          return;
+        }
+
+        console.log('🔍 Checking Leaflet availability...');
+        if (typeof L === 'undefined' || !L.map) {
+          throw new Error('Leaflet library not loaded');
+        }
+        
+        const container = mapRef.current;
+        console.log('📐 Container ready with dimensions:', {
+          offsetWidth: container.offsetWidth,
+          offsetHeight: container.offsetHeight
+        });
+
         console.log('🗺️ Creating Leaflet map instance...');
         
         // Create map instance
@@ -104,34 +93,26 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
         console.log('🌍 Adding tile layer...');
         
-        // Add tile layer with error handling
+        // Add tile layer
         const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
           maxZoom: 19
         });
         
-        tileLayer.on('tileerror', (e) => {
-          console.warn('⚠️ Tile loading error:', e);
-        });
-        
         tileLayer.addTo(map);
-        
         mapInstance.current = map;
         
         console.log('✅ Map initialized successfully');
         
         // Trigger ready callback
-        if (onMapReady) {
-          try {
-            onMapReady(map, L);
-            console.log('✅ Map ready callback executed');
-          } catch (callbackError) {
-            console.error('❌ Map ready callback failed:', callbackError);
-          }
+        if (onMapReady && mounted) {
+          onMapReady(map, L);
         }
         
-        setIsLoading(false);
-        setError(null);
+        if (mounted) {
+          setIsLoading(false);
+          setError(null);
+        }
         
       } catch (error) {
         console.error('❌ Map initialization failed:', error);
@@ -144,18 +125,14 @@ const MapContainer: React.FC<MapContainerProps> = ({
           if (onMapError) {
             onMapError(error instanceof Error ? error : new Error(errorMessage));
           }
-          
-          toast.error(`Map failed to load: ${errorMessage}`);
         }
       }
     };
 
-    // Add a longer delay to ensure CSS is loaded
-    const timeoutId = setTimeout(initMap, 200);
+    initMap();
     
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
       
       if (mapInstance.current) {
         console.log('🧹 Cleaning up map instance');
@@ -213,6 +190,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
     <div className={className} style={style}>
       <div 
         ref={mapRef} 
+        data-map-container
         className="h-full w-full rounded-lg overflow-hidden"
         style={{ 
           minHeight: '400px',
