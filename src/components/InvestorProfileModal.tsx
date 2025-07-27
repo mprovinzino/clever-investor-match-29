@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Building, MapPin, DollarSign, FileText, Globe, Users, Target, TrendingUp, Map } from "lucide-react";
-// import CoverageMap from "./CoverageMap";
+import CoverageMapbox from "./CoverageMapbox";
 
 interface InvestorProfileModalProps {
   investor: any;
@@ -247,9 +247,7 @@ export const InvestorProfileModal = ({ investor, isOpen, onClose, onEditInvestor
           </TabsContent>
 
           <TabsContent value="coverage" className="mt-4">
-            <div className="p-8 text-center text-muted-foreground">
-              Coverage map temporarily disabled for debugging
-            </div>
+            <CoverageMapbox investorId={investor.ID} editable={false} />
           </TabsContent>
 
           <TabsContent value="activity" className="mt-4">

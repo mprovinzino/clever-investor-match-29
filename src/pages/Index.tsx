@@ -8,7 +8,7 @@ import InvestorsTable from "@/components/InvestorsTable";
 import PropertiesTable from "@/components/PropertiesTable";
 import MatchesTable from "@/components/MatchesTable";
 import DashboardStats from "@/components/DashboardStats";
-// import GlobalCoverageMap from "@/components/GlobalCoverageMap";
+import GlobalCoverageMapbox from "@/components/GlobalCoverageMapbox";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -107,9 +107,7 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <div className="p-8 text-center text-muted-foreground">
-              Maps temporarily disabled - debugging React context issue
-            </div>
+            <GlobalCoverageMapbox />
           </TabsContent>
 
           {/* Properties Tab */}
