@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Building, MapPin, DollarSign, FileText, Globe, Users, Target, TrendingUp, Map } from "lucide-react";
-import CoverageMap from "./CoverageMap";
+// import CoverageMap from "./CoverageMap";
 
 interface InvestorProfileModalProps {
   investor: any;
