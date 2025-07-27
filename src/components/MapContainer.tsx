@@ -42,12 +42,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         
         console.log('🗺️ Creating map instance...');
         
-        const map = L.map(mapRef.current, {
-          center,
-          zoom,
-          zoomControl: true,
-          attributionControl: true
-        });
+        const map = L.map(mapRef.current).setView(center, zoom);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
@@ -56,17 +51,13 @@ const MapContainer: React.FC<MapContainerProps> = ({
         
         mapInstance.current = map;
         
-        // Ensure map is properly sized
-        setTimeout(() => {
-          if (mounted && map) {
-            map.invalidateSize();
-            if (onMapReady) {
-              onMapReady(map, L);
-            }
-            setIsLoading(false);
-            console.log('✅ Map initialized successfully');
-          }
-        }, 100);
+        // Trigger map ready callback
+        if (onMapReady) {
+          onMapReady(map, L);
+        }
+        
+        setIsLoading(false);
+        console.log('✅ Map initialized successfully');
         
       } catch (error) {
         console.error('❌ Map initialization failed:', error);
