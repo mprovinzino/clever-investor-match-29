@@ -99,6 +99,24 @@ const GlobalCoverageMapbox: React.FC = () => {
   };
 
   const addCoverageLayersToMap = (map: any) => {
+    console.log('addCoverageLayersToMap called', { map, mapLoaded: map?.loaded(), mapStyle: map?.getStyle() });
+    
+    // Critical safety checks
+    if (!map) {
+      console.error('Map is undefined in addCoverageLayersToMap');
+      return;
+    }
+    
+    if (!map.loaded()) {
+      console.log('Map not yet loaded, deferring layer addition');
+      return;
+    }
+    
+    if (!map.getStyle()) {
+      console.log('Map style not ready, deferring layer addition');
+      return;
+    }
+    
     // First, clean up any existing layers and sources
     cleanupMapSources(map);
     
@@ -109,8 +127,18 @@ const GlobalCoverageMapbox: React.FC = () => {
       const lineLayerId = `global-coverage-line-${area.id}`;
       const color = getInvestorColor(area.investor_id);
 
+      console.log('Processing area:', { sourceId, area: area.area_name });
+
       // Check if source already exists before adding
-      if (!map.getSource(sourceId)) {
+      let sourceExists = false;
+      try {
+        sourceExists = !!map.getSource(sourceId);
+      } catch (error) {
+        console.error('Error checking source existence:', error);
+        sourceExists = false;
+      }
+
+      if (!sourceExists) {
         // Add source
         map.addSource(sourceId, {
           type: 'geojson',
@@ -173,7 +201,12 @@ const GlobalCoverageMapbox: React.FC = () => {
   };
 
   const cleanupMapSources = (map: any) => {
-    if (!map || !map.getStyle()) return;
+    console.log('cleanupMapSources called', { map, mapLoaded: map?.loaded() });
+    
+    if (!map || !map.loaded() || !map.getStyle()) {
+      console.log('Map not ready for cleanup, skipping');
+      return;
+    }
     
     const style = map.getStyle();
     
@@ -206,8 +239,17 @@ const GlobalCoverageMapbox: React.FC = () => {
 
   // Update map when filter changes
   useEffect(() => {
-    if (mapRef.current && !loading) {
+    console.log('useEffect triggered', { 
+      mapRef: mapRef.current, 
+      loading, 
+      filteredAreasLength: filteredAreas.length,
+      mapLoaded: mapRef.current?.loaded()
+    });
+    
+    if (mapRef.current && !loading && mapRef.current.loaded()) {
       addCoverageLayersToMap(mapRef.current);
+    } else {
+      console.log('Skipping layer addition - conditions not met');
     }
   }, [filteredAreas, loading]);
 

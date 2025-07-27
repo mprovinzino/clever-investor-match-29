@@ -67,6 +67,24 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
   };
 
   const addCoverageLayersToMap = (map: any) => {
+    console.log('CoverageMapbox: addCoverageLayersToMap called', { map, mapLoaded: map?.loaded() });
+    
+    // Critical safety checks
+    if (!map) {
+      console.error('CoverageMapbox: Map is undefined');
+      return;
+    }
+    
+    if (!map.loaded()) {
+      console.log('CoverageMapbox: Map not yet loaded, deferring');
+      return;
+    }
+    
+    if (!map.getStyle()) {
+      console.log('CoverageMapbox: Map style not ready, deferring');
+      return;
+    }
+    
     // First, clean up any existing layers and sources
     cleanupMapSources(map);
     
@@ -137,7 +155,12 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
   };
 
   const cleanupMapSources = (map: any) => {
-    if (!map || !map.getStyle()) return;
+    console.log('CoverageMapbox: cleanupMapSources called', { map, mapLoaded: map?.loaded() });
+    
+    if (!map || !map.loaded() || !map.getStyle()) {
+      console.log('CoverageMapbox: Map not ready for cleanup, skipping');
+      return;
+    }
     
     const style = map.getStyle();
     
@@ -170,8 +193,17 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
 
   // Update map when coverage areas change
   useEffect(() => {
-    if (mapRef.current && !loading) {
+    console.log('CoverageMapbox: useEffect triggered', { 
+      mapRef: mapRef.current, 
+      loading, 
+      coverageAreasLength: coverageAreas.length,
+      mapLoaded: mapRef.current?.loaded()
+    });
+    
+    if (mapRef.current && !loading && mapRef.current.loaded()) {
       addCoverageLayersToMap(mapRef.current);
+    } else {
+      console.log('CoverageMapbox: Skipping layer addition - conditions not met');
     }
   }, [coverageAreas, loading]);
 
