@@ -9,6 +9,7 @@ import PropertiesTable from "@/components/PropertiesTable";
 import MatchesTable from "@/components/MatchesTable";
 import DashboardStats from "@/components/DashboardStats";
 import GlobalCoverageMapbox from "@/components/GlobalCoverageMapbox";
+import MapboxUsageDashboard from "@/components/MapboxUsageDashboard";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -75,6 +76,7 @@ const Index = () => {
               </div>
             </div>
             <DashboardStats />
+            <MapboxUsageDashboard />
           </TabsContent>
 
           {/* Investors Tab */}

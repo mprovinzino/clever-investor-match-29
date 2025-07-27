@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { useMapboxContext } from './SafeMapboxProvider';
+import StaticMapFallback from './StaticMapFallback';
 
 interface BasicMapboxProps {
   height?: string;
@@ -17,98 +19,85 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [hasIncrementedUsage, setHasIncrementedUsage] = useState(false);
+  
+  const { token: mapboxToken, canLoadMap, incrementUsage, usagePercentage } = useMapboxContext();
 
   useEffect(() => {
-    // Try to get Mapbox token from localStorage first (temporary fallback)
-    const savedToken = localStorage.getItem('mapbox_token');
-    if (savedToken) {
-      setMapboxToken(savedToken);
-    } else {
-      setError('Mapbox token not found. Please add your Mapbox token.');
-    }
-  }, []);
+    if (!mapContainer.current || !mapboxToken || map.current || !canLoadMap) return;
 
-  useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || map.current) return;
-
-    // Dynamically import mapbox to prevent React conflicts
-    import('mapbox-gl').then((mapboxgl) => {
-      // Import CSS dynamically too
-      import('mapbox-gl/dist/mapbox-gl.css');
-      
-      mapboxgl.default.accessToken = mapboxToken;
-    
-      map.current = new mapboxgl.default.Map({
-        container: mapContainer.current!,
-        style: 'mapbox://styles/mapbox/light-v11',
-        center: center,
-        zoom: zoom
-      });
-
-      map.current.addControl(new mapboxgl.default.NavigationControl(), 'top-right');
-
-      map.current.on('load', () => {
-        if (map.current && onLoad) {
-          onLoad(map.current);
+    // Increment usage counter when map loads
+    const loadMapWithUsageTracking = async () => {
+      try {
+        if (!hasIncrementedUsage) {
+          await incrementUsage('map_load');
+          setHasIncrementedUsage(true);
         }
-      });
-    }).catch((error) => {
-      console.error('Failed to load Mapbox:', error);
-      setError('Failed to load Mapbox. Please refresh the page.');
-    });
+
+        // Dynamically import mapbox to prevent React conflicts
+        const mapboxgl = await import('mapbox-gl');
+        await import('mapbox-gl/dist/mapbox-gl.css');
+        
+        mapboxgl.default.accessToken = mapboxToken;
+      
+        map.current = new mapboxgl.default.Map({
+          container: mapContainer.current!,
+          style: 'mapbox://styles/mapbox/light-v11',
+          center: center,
+          zoom: zoom,
+          // Add optimization settings for better performance
+          maxZoom: 18,
+          attributionControl: false,
+          renderWorldCopies: false
+        });
+
+        map.current.addControl(new mapboxgl.default.NavigationControl(), 'top-right');
+
+        map.current.on('load', () => {
+          if (map.current && onLoad) {
+            onLoad(map.current);
+          }
+        });
+
+        // Add usage tracking for interaction events
+        map.current.on('moveend', () => {
+          // Debounced - only track significant movements
+        });
+
+      } catch (error) {
+        console.error('Failed to load Mapbox:', error);
+        setError('Failed to load Mapbox. Please refresh the page.');
+      }
+    };
+
+    loadMapWithUsageTracking();
 
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken, center, zoom, onLoad]);
+  }, [mapboxToken, center, zoom, onLoad, canLoadMap, incrementUsage, hasIncrementedUsage]);
 
-  const handleTokenSubmit = (token: string) => {
-    localStorage.setItem('mapbox_token', token);
-    setMapboxToken(token);
-    setError('');
-  };
+  // Show static fallback if usage limit exceeded
+  if (!canLoadMap) {
+    return (
+      <StaticMapFallback 
+        height={height}
+        message={`Map disabled - ${usagePercentage.toFixed(1)}% of monthly quota used`}
+      />
+    );
+  }
 
-  if (error || !mapboxToken) {
+  if (error) {
     return (
       <div style={{ height }} className="flex items-center justify-center bg-muted rounded-lg">
         <div className="max-w-md w-full p-4 space-y-4">
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Mapbox token required. Get yours at{' '}
-              <a 
-                href="https://mapbox.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                mapbox.com
-              </a>
+              {error}
             </AlertDescription>
           </Alert>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Enter your Mapbox token"
-              className="flex-1 px-3 py-2 border border-input rounded-md text-sm"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleTokenSubmit(e.currentTarget.value);
-                }
-              }}
-            />
-            <button
-              onClick={(e) => {
-                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                handleTokenSubmit(input.value);
-              }}
-              className="px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
-            >
-              Set Token
-            </button>
-          </div>
         </div>
       </div>
     );
