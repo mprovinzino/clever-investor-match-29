@@ -63,6 +63,12 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
 
   const handleMapLoad = (map: any) => {
     mapRef.current = map;
+    addCoverageLayersToMap(map);
+  };
+
+  const addCoverageLayersToMap = (map: any) => {
+    // First, clean up any existing layers and sources
+    cleanupMapSources(map);
     
     // Add coverage areas to the map
     coverageAreas.forEach((area, index) => {
@@ -70,88 +76,102 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
       const fillLayerId = `coverage-fill-${area.id}`;
       const lineLayerId = `coverage-line-${area.id}`;
 
-      // Add source
-      map.addSource(sourceId, {
-        type: 'geojson',
-        data: area.geojson_data
-      });
-
-      // Add fill layer
-      map.addLayer({
-        id: fillLayerId,
-        type: 'fill',
-        source: sourceId,
-        paint: {
-          'fill-color': '#3b82f6',
-          'fill-opacity': 0.3
-        }
-      });
-
-      // Add line layer
-      map.addLayer({
-        id: lineLayerId,
-        type: 'line',
-        source: sourceId,
-        paint: {
-          'line-color': '#1d4ed8',
-          'line-width': 2,
-          'line-opacity': 1
-        }
-      });
-
-      // Add click handler
-      map.on('click', fillLayerId, (e: any) => {
-        import('mapbox-gl').then((mapboxgl) => {
-          new mapboxgl.default.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`
-            <div class="p-3 min-w-48">
-              <h3 class="font-semibold text-sm mb-2">${area.area_name}</h3>
-              <p class="text-xs text-muted-foreground">
-                Created: ${new Date(area.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          `)
-            .addTo(map);
+      // Check if source already exists before adding
+      if (!map.getSource(sourceId)) {
+        // Add source
+        map.addSource(sourceId, {
+          type: 'geojson',
+          data: area.geojson_data
         });
-      });
 
-      // Change cursor on hover
-      map.on('mouseenter', fillLayerId, () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
+        // Add fill layer
+        map.addLayer({
+          id: fillLayerId,
+          type: 'fill',
+          source: sourceId,
+          paint: {
+            'fill-color': '#3b82f6',
+            'fill-opacity': 0.3
+          }
+        });
 
-      map.on('mouseleave', fillLayerId, () => {
-        map.getCanvas().style.cursor = '';
-      });
+        // Add line layer
+        map.addLayer({
+          id: lineLayerId,
+          type: 'line',
+          source: sourceId,
+          paint: {
+            'line-color': '#1d4ed8',
+            'line-width': 2,
+            'line-opacity': 1
+          }
+        });
+
+        // Add click handler
+        map.on('click', fillLayerId, (e: any) => {
+          import('mapbox-gl').then((mapboxgl) => {
+            new mapboxgl.default.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <div class="p-3 min-w-48">
+                <h3 class="font-semibold text-sm mb-2">${area.area_name}</h3>
+                <p class="text-xs text-muted-foreground">
+                  Created: ${new Date(area.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            `)
+              .addTo(map);
+          });
+        });
+
+        // Change cursor on hover
+        map.on('mouseenter', fillLayerId, () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+
+        map.on('mouseleave', fillLayerId, () => {
+          map.getCanvas().style.cursor = '';
+        });
+      }
     });
+  };
+
+  const cleanupMapSources = (map: any) => {
+    if (!map || !map.getStyle()) return;
+    
+    const style = map.getStyle();
+    
+    // Remove existing layers first
+    if (style.layers) {
+      style.layers.forEach((layer: any) => {
+        if (layer.id.startsWith('coverage-')) {
+          try {
+            map.removeLayer(layer.id);
+          } catch (e) {
+            // Layer might not exist, ignore error
+          }
+        }
+      });
+    }
+
+    // Remove existing sources
+    if (style.sources) {
+      Object.keys(style.sources).forEach((sourceId) => {
+        if (sourceId.startsWith('coverage-source-')) {
+          try {
+            map.removeSource(sourceId);
+          } catch (e) {
+            // Source might not exist, ignore error
+          }
+        }
+      });
+    }
   };
 
   // Update map when coverage areas change
   useEffect(() => {
     if (mapRef.current && !loading) {
-      // Remove existing layers and sources
-      const map = mapRef.current;
-      const style = map.getStyle();
-      
-      if (style.layers) {
-        style.layers.forEach((layer: any) => {
-          if (layer.id.startsWith('coverage-')) {
-            map.removeLayer(layer.id);
-          }
-        });
-      }
-
-      if (style.sources) {
-        Object.keys(style.sources).forEach((sourceId) => {
-          if (sourceId.startsWith('coverage-source-')) {
-            map.removeSource(sourceId);
-          }
-        });
-      }
-
-      // Add new layers
-      handleMapLoad(map);
+      addCoverageLayersToMap(mapRef.current);
     }
   }, [coverageAreas, loading]);
 
