@@ -2,27 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Leaflet Map Styles - Prevent Tailwind conflicts */
-.leaflet-container {
-  font-family: inherit !important;
-  background: transparent !important;
-}
-
-.leaflet-map-pane,
-.leaflet-tile,
-.leaflet-marker-icon,
-.leaflet-marker-shadow {
-  max-width: none !important;
-  max-height: none !important;
-}
-
-/* Ensure map container always has dimensions */
-[data-map-container] {
-  min-height: 400px !important;
-  width: 100% !important;
-  position: relative !important;
-  display: block !important;
-}
 
 /* Real Estate Platform Design System - Professional B2B SaaS Theme */
 
@@ -157,26 +136,4 @@
     @apply bg-background text-foreground;
   }
 
-  /* Leaflet Map Container Styles - Override any conflicts */
-  .leaflet-container {
-    height: 100% !important;
-    width: 100% !important;
-    position: relative !important;
-    background: hsl(var(--background)) !important;
-  }
-
-  .leaflet-control-container {
-    font-family: inherit !important;
-  }
-
-  .leaflet-popup-content-wrapper {
-    background: hsl(var(--popover)) !important;
-    color: hsl(var(--popover-foreground)) !important;
-    border-radius: 6px !important;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
-  }
-
-  .leaflet-popup-tip {
-    background: hsl(var(--popover)) !important;
-  }
 }

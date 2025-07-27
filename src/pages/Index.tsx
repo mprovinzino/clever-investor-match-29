@@ -8,7 +8,7 @@ import InvestorsTable from "@/components/InvestorsTable";
 import PropertiesTable from "@/components/PropertiesTable";
 import MatchesTable from "@/components/MatchesTable";
 import DashboardStats from "@/components/DashboardStats";
-import GlobalCoverageMap from "@/components/GlobalCoverageMap";
+import CoveragePlaceholder from "@/components/CoveragePlaceholder";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -107,7 +107,10 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <GlobalCoverageMap />
+            <CoveragePlaceholder 
+              title="Global Coverage Map"
+              description="View and manage coverage areas for all investors across different regions"
+            />
           </TabsContent>
 
           {/* Properties Tab */}

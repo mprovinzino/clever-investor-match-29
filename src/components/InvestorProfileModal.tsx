@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Building, MapPin, DollarSign, FileText, Globe, Users, Target, TrendingUp, Map } from "lucide-react";
-import MapCoverage from "./MapCoverage";
+import CoveragePlaceholder from "./CoveragePlaceholder";
 
 interface InvestorProfileModalProps {
   investor: any;
@@ -247,7 +247,10 @@ export const InvestorProfileModal = ({ investor, isOpen, onClose, onEditInvestor
           </TabsContent>
 
           <TabsContent value="coverage" className="mt-4">
-            <MapCoverage investorId={investor.ID} />
+            <CoveragePlaceholder 
+              title="Coverage Areas"
+              description="View and manage geographical coverage areas for this investor"
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="mt-4">
