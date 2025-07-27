@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Trash2, Edit3, Plus, MapPin } from 'lucide-react';
 import MapContainer from '@/components/MapContainer';
+import { L } from '@/lib/leaflet';
 
 interface CoverageArea {
   id: string;
@@ -126,7 +127,7 @@ const MapCoverage: React.FC<MapCoverageProps> = ({ investorId, readonly = false 
     },
   });
 
-  const handleMapReady = (mapInstance: any, L: any) => {
+  const handleMapReady = (mapInstance: L.Map, LeafletLib: typeof import('leaflet')) => {
     console.log('✅ Map ready for coverage areas');
     map.current = mapInstance;
 
@@ -137,15 +138,15 @@ const MapCoverage: React.FC<MapCoverageProps> = ({ investorId, readonly = false 
     if (!readonly) {
       try {
         // Add drawing controls
-        const drawControlInstance = new L.Control.Draw({
+        const drawControlInstance = new (L.Control as any).Draw({
           edit: {
             featureGroup: drawnItems.current,
             remove: true
           },
           draw: {
-            polygon: true,
-            circle: true,
-            rectangle: true,
+            polygon: {},
+            circle: {},
+            rectangle: {},
             marker: false,
             polyline: false,
             circlemarker: false
@@ -171,7 +172,7 @@ const MapCoverage: React.FC<MapCoverageProps> = ({ investorId, readonly = false 
     }
 
     // Load existing coverage areas
-    loadCoverageAreas(L);
+    loadCoverageAreas(LeafletLib);
   };
 
   const handleMapError = (error: Error) => {
@@ -223,8 +224,8 @@ const MapCoverage: React.FC<MapCoverageProps> = ({ investorId, readonly = false 
 
   // Update coverage areas when data changes
   useEffect(() => {
-    if (map.current && drawnItems.current && (window as any).L) {
-      loadCoverageAreas((window as any).L);
+    if (map.current && drawnItems.current && L) {
+      loadCoverageAreas(L);
     }
   }, [coverageAreas]);
 

@@ -2,11 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle, MapPin } from 'lucide-react';
-import { initializeLeaflet } from '@/lib/leaflet';
+import { L } from '@/lib/leaflet';
 
 interface MapContainerProps {
   children?: React.ReactNode;
-  onMapReady?: (map: any, L: any) => void;
+  onMapReady?: (map: L.Map, L: typeof import('leaflet')) => void;
   onMapError?: (error: Error) => void;
   className?: string;
   center?: [number, number];
@@ -24,44 +24,58 @@ const MapContainer: React.FC<MapContainerProps> = ({
   style = { minHeight: '400px' }
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
+  const mapInstance = useRef<L.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
 
-    const initMap = async () => {
+    const initMap = () => {
       if (!mounted || !mapRef.current || mapInstance.current) return;
       
       try {
-        console.log('🗺️ Initializing Leaflet...');
-        const L = await initializeLeaflet();
+        console.log('🗺️ Initializing Leaflet map...');
         
-        if (!mounted || !mapRef.current) return;
-        
-        console.log('🗺️ Creating map instance...');
-        
-        const map = L.map(mapRef.current).setView(center, zoom);
-        
+        // Ensure the container has dimensions
+        const container = mapRef.current;
+        if (!container.offsetWidth || !container.offsetHeight) {
+          console.warn('Map container has no dimensions, retrying...');
+          setTimeout(() => mounted && initMap(), 100);
+          return;
+        }
+
+        // Create map instance
+        const map = L.map(container, {
+          center: center,
+          zoom: zoom,
+          zoomControl: true,
+          attributionControl: true
+        });
+
+        // Add tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
           maxZoom: 19
         }).addTo(map);
-        
+
         mapInstance.current = map;
         
-        // Trigger map ready callback
+        console.log('✅ Map initialized successfully');
+        
+        // Trigger ready callback
         if (onMapReady) {
           onMapReady(map, L);
         }
         
         setIsLoading(false);
-        console.log('✅ Map initialized successfully');
+        setError(null);
         
       } catch (error) {
         console.error('❌ Map initialization failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : 'Failed to initialize map';
+        
         if (mounted) {
           setError(errorMessage);
           setIsLoading(false);
@@ -75,22 +89,29 @@ const MapContainer: React.FC<MapContainerProps> = ({
       }
     };
 
-    initMap();
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(initMap, 50);
     
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
+      
       if (mapInstance.current) {
         console.log('🧹 Cleaning up map instance');
-        mapInstance.current.remove();
+        try {
+          mapInstance.current.remove();
+        } catch (cleanupError) {
+          console.warn('Error during map cleanup:', cleanupError);
+        }
         mapInstance.current = null;
       }
     };
-  }, [center, zoom, onMapReady, onMapError]);
+  }, [center, zoom, onMapReady, onMapError, retryKey]);
 
   const handleRetry = () => {
     setIsLoading(true);
     setError(null);
-    window.location.reload();
+    setRetryKey(prev => prev + 1);
   };
 
   if (error) {
@@ -129,7 +150,11 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
   return (
     <div className={className} style={style}>
-      <div ref={mapRef} className="h-full w-full" />
+      <div 
+        ref={mapRef} 
+        className="h-full w-full rounded-lg overflow-hidden"
+        style={{ minHeight: '400px' }}
+      />
       {children}
     </div>
   );

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MapPin, Building } from 'lucide-react';
 import MapContainer from '@/components/MapContainer';
+import { L } from '@/lib/leaflet';
 
 interface CoverageArea {
   id: string;
@@ -72,16 +73,16 @@ const GlobalCoverageMap: React.FC = () => {
     },
   });
 
-  const handleMapReady = (mapInstance: any, L: any) => {
+  const handleMapReady = (mapInstance: L.Map, LeafletLib: typeof import('leaflet')) => {
     console.log('✅ Global map ready');
     map.current = mapInstance;
 
     // Initialize coverage layers group
-    coverageLayersGroup.current = new L.LayerGroup();
+    coverageLayersGroup.current = new LeafletLib.LayerGroup();
     map.current.addLayer(coverageLayersGroup.current);
 
     // Load coverage areas
-    loadCoverageAreas(L);
+    loadCoverageAreas(LeafletLib);
   };
 
   const handleMapError = (error: Error) => {
@@ -148,8 +149,8 @@ const GlobalCoverageMap: React.FC = () => {
 
   // Update coverage areas when data or filter changes
   useEffect(() => {
-    if (map.current && coverageLayersGroup.current && (window as any).L) {
-      loadCoverageAreas((window as any).L);
+    if (map.current && coverageLayersGroup.current && L) {
+      loadCoverageAreas(L);
     }
   }, [coverageAreas, selectedInvestor, investorNames]);
 
