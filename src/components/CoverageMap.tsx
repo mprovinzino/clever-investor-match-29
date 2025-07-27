@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { GeoJSON, Popup } from 'react-leaflet';
-import { FeatureGroup } from 'react-leaflet/FeatureGroup';
-import { EditControl } from 'react-leaflet-draw';
 import BasicMap from './BasicMap';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Edit3, Save, Trash2 } from 'lucide-react';
+import { MapPin, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CoverageMapProps {
@@ -56,52 +54,12 @@ const CoverageMap: React.FC<CoverageMapProps> = ({ investorId, editable = false 
     }
   };
 
-  const handleCreated = async (e: any) => {
-    const { layer } = e;
-    const geoJSON = layer.toGeoJSON();
-    
-    try {
-      const { error } = await supabase
-        .from('coverage_areas')
-        .insert({
-          investor_id: investorId,
-          area_name: `Area ${coverageAreas.length + 1}`,
-          geojson_data: geoJSON
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Coverage area created successfully"
-      });
-      
-      loadCoverageAreas();
-    } catch (error) {
-      console.error('Error creating coverage area:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create coverage area",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEdited = async (e: any) => {
-    // Handle editing existing areas
+  const handleCreateArea = () => {
+    // For now, we'll add a placeholder function
+    // Drawing functionality will be implemented separately
     toast({
-      title: "Success",
-      description: "Coverage areas updated"
-    });
-  };
-
-  const handleDeleted = async (e: any) => {
-    // Handle deleting areas
-    toast({
-      title: "Success", 
-      description: "Coverage areas deleted"
+      title: "Drawing Feature",
+      description: "Drawing tools will be available soon",
     });
   };
 
@@ -123,9 +81,9 @@ const CoverageMap: React.FC<CoverageMapProps> = ({ investorId, editable = false 
           Coverage Areas
           {editable && (
             <div className="ml-auto flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleCreateArea}>
                 <Edit3 className="h-4 w-4 mr-1" />
-                Edit
+                Add Area
               </Button>
             </div>
           )}
@@ -133,28 +91,6 @@ const CoverageMap: React.FC<CoverageMapProps> = ({ investorId, editable = false 
       </CardHeader>
       <CardContent>
         <BasicMap height="500px">
-          <FeatureGroup>
-            {editable && (
-              <EditControl
-                position="topright"
-                onCreated={handleCreated}
-                onEdited={handleEdited}
-                onDeleted={handleDeleted}
-                draw={{
-                  rectangle: false,
-                  circle: false,
-                  circlemarker: false,
-                  marker: false,
-                  polyline: false,
-                  polygon: {
-                    allowIntersection: false,
-                    showArea: true
-                  }
-                }}
-              />
-            )}
-          </FeatureGroup>
-          
           {coverageAreas.map((area) => (
             <GeoJSON
               key={area.id}
