@@ -2,7 +2,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Import Mapbox CSS
-import 'mapbox-gl/dist/mapbox-gl.css'
+// Mapbox CSS will be loaded dynamically to prevent conflicts
 
 createRoot(document.getElementById("root")!).render(<App />);

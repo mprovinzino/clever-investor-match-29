@@ -1,6 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -8,7 +6,7 @@ interface BasicMapboxProps {
   height?: string;
   center?: [number, number];
   zoom?: number;
-  onLoad?: (map: mapboxgl.Map) => void;
+  onLoad?: (map: any) => void;
 }
 
 const BasicMapbox: React.FC<BasicMapboxProps> = ({
@@ -18,7 +16,7 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
   onLoad
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<any>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [error, setError] = useState<string>('');
 
@@ -35,21 +33,30 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || map.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    // Dynamically import mapbox to prevent React conflicts
+    import('mapbox-gl').then((mapboxgl) => {
+      // Import CSS dynamically too
+      import('mapbox-gl/dist/mapbox-gl.css');
+      
+      mapboxgl.default.accessToken = mapboxToken;
     
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: center,
-      zoom: zoom
-    });
+      map.current = new mapboxgl.default.Map({
+        container: mapContainer.current!,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: center,
+        zoom: zoom
+      });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(new mapboxgl.default.NavigationControl(), 'top-right');
 
-    map.current.on('load', () => {
-      if (map.current && onLoad) {
-        onLoad(map.current);
-      }
+      map.current.on('load', () => {
+        if (map.current && onLoad) {
+          onLoad(map.current);
+        }
+      });
+    }).catch((error) => {
+      console.error('Failed to load Mapbox:', error);
+      setError('Failed to load Mapbox. Please refresh the page.');
     });
 
     return () => {

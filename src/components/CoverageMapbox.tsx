@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
 import BasicMapbox from './BasicMapbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +23,7 @@ interface CoverageArea {
 const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = false }) => {
   const [coverageAreas, setCoverageAreas] = useState<CoverageArea[]>([]);
   const [loading, setLoading] = useState(true);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,7 +61,7 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
     });
   };
 
-  const handleMapLoad = (map: mapboxgl.Map) => {
+  const handleMapLoad = (map: any) => {
     mapRef.current = map;
     
     // Add coverage areas to the map
@@ -101,8 +100,9 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
       });
 
       // Add click handler
-      map.on('click', fillLayerId, (e) => {
-        new mapboxgl.Popup()
+      map.on('click', fillLayerId, (e: any) => {
+        import('mapbox-gl').then((mapboxgl) => {
+          new mapboxgl.default.Popup()
           .setLngLat(e.lngLat)
           .setHTML(`
             <div class="p-3 min-w-48">
@@ -112,7 +112,8 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
               </p>
             </div>
           `)
-          .addTo(map);
+            .addTo(map);
+        });
       });
 
       // Change cursor on hover

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
 import BasicMapbox from './BasicMapbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +32,7 @@ const GlobalCoverageMapbox: React.FC = () => {
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [selectedInvestor, setSelectedInvestor] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const { toast } = useToast();
 
   // Color palette for different investors
@@ -94,7 +93,7 @@ const GlobalCoverageMapbox: React.FC = () => {
     return investor ? investor['Company Name'] : 'Unknown Investor';
   };
 
-  const handleMapLoad = (map: mapboxgl.Map) => {
+  const handleMapLoad = (map: any) => {
     mapRef.current = map;
     
     // Add filtered coverage areas to the map
@@ -134,8 +133,9 @@ const GlobalCoverageMapbox: React.FC = () => {
       });
 
       // Add click handler
-      map.on('click', fillLayerId, (e) => {
-        new mapboxgl.Popup()
+      map.on('click', fillLayerId, (e: any) => {
+        import('mapbox-gl').then((mapboxgl) => {
+          new mapboxgl.default.Popup()
           .setLngLat(e.lngLat)
           .setHTML(`
             <div class="p-3 min-w-48">
@@ -148,7 +148,8 @@ const GlobalCoverageMapbox: React.FC = () => {
               </p>
             </div>
           `)
-          .addTo(map);
+            .addTo(map);
+        });
       });
 
       // Change cursor on hover
