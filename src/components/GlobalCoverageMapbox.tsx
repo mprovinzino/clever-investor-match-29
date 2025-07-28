@@ -99,46 +99,43 @@ const GlobalCoverageMapbox: React.FC = () => {
   };
 
   const addCoverageLayersToMap = (map: any) => {
-    console.log('addCoverageLayersToMap called', { map, mapLoaded: map?.loaded(), mapStyle: map?.getStyle() });
+    console.log('addCoverageLayersToMap called', { 
+      map, 
+      mapLoaded: map?.loaded(), 
+      filteredAreasLength: filteredAreas.length 
+    });
     
-    // Critical safety checks
-    if (!map) {
-      console.error('Map is undefined in addCoverageLayersToMap');
-      return;
-    }
-    
-    if (!map.loaded()) {
-      console.log('Map not yet loaded, deferring layer addition');
-      return;
-    }
-    
-    if (!map.getStyle()) {
-      console.log('Map style not ready, deferring layer addition');
+    // Simplified safety checks
+    if (!map || !map.loaded()) {
+      console.log('Map not ready, skipping layer addition');
       return;
     }
     
     // First, clean up any existing layers and sources
     cleanupMapSources(map);
     
+    if (filteredAreas.length === 0) {
+      console.log('No coverage areas to display');
+      return;
+    }
+    
+    const bounds = new (window as any).mapboxgl.LngLatBounds();
+    let boundsSet = false;
+    
     // Add filtered coverage areas to the map
     filteredAreas.forEach((area) => {
+      // Validate GeoJSON data
+      if (!area.geojson_data || !area.geojson_data.type) {
+        console.warn('Invalid GeoJSON data for area:', area.area_name);
+        return;
+      }
+      
       const sourceId = `global-coverage-source-${area.id}`;
       const fillLayerId = `global-coverage-fill-${area.id}`;
       const lineLayerId = `global-coverage-line-${area.id}`;
       const color = getInvestorColor(area.investor_id);
 
-      console.log('Processing area:', { sourceId, area: area.area_name });
-
-      // Check if source already exists before adding
-      let sourceExists = false;
       try {
-        sourceExists = !!map.getSource(sourceId);
-      } catch (error) {
-        console.error('Error checking source existence:', error);
-        sourceExists = false;
-      }
-
-      if (!sourceExists) {
         // Add source
         map.addSource(sourceId, {
           type: 'geojson',
@@ -168,6 +165,29 @@ const GlobalCoverageMapbox: React.FC = () => {
           }
         });
 
+        // Extend bounds with this area's coordinates
+        if (area.geojson_data.type === 'FeatureCollection') {
+          area.geojson_data.features.forEach((feature: any) => {
+            if (feature.geometry && feature.geometry.coordinates) {
+              const coords = feature.geometry.coordinates;
+              if (feature.geometry.type === 'Polygon') {
+                coords[0].forEach((coord: [number, number]) => {
+                  bounds.extend(coord);
+                  boundsSet = true;
+                });
+              }
+            }
+          });
+        } else if (area.geojson_data.geometry && area.geojson_data.geometry.coordinates) {
+          const coords = area.geojson_data.geometry.coordinates;
+          if (area.geojson_data.geometry.type === 'Polygon') {
+            coords[0].forEach((coord: [number, number]) => {
+              bounds.extend(coord);
+              boundsSet = true;
+            });
+          }
+        }
+
         // Add click handler
         map.on('click', fillLayerId, (e: any) => {
           import('mapbox-gl').then((mapboxgl) => {
@@ -177,7 +197,7 @@ const GlobalCoverageMapbox: React.FC = () => {
               <div class="p-3 min-w-48">
                 <h3 class="font-semibold text-sm mb-2">${area.area_name}</h3>
                 <p class="text-sm font-medium mb-1">
-                  ${getInvestorName(area.investor_id)}
+                  Investor: ${getInvestorName(area.investor_id)}
                 </p>
                 <p class="text-xs text-muted-foreground">
                   Created: ${new Date(area.created_at).toLocaleDateString()}
@@ -196,23 +216,38 @@ const GlobalCoverageMapbox: React.FC = () => {
         map.on('mouseleave', fillLayerId, () => {
           map.getCanvas().style.cursor = '';
         });
+        
+      } catch (error) {
+        console.error('Error adding coverage area to map:', error, area);
       }
     });
+    
+    // Fit map to show all coverage areas
+    if (boundsSet) {
+      setTimeout(() => {
+        try {
+          map.fitBounds(bounds, { 
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 12 
+          });
+        } catch (error) {
+          console.error('Error fitting bounds:', error);
+        }
+      }, 100);
+    }
   };
 
   const cleanupMapSources = (map: any) => {
-    console.log('cleanupMapSources called', { map, mapLoaded: map?.loaded() });
-    
-    if (!map || !map.loaded() || !map.getStyle()) {
-      console.log('Map not ready for cleanup, skipping');
+    if (!map || !map.loaded()) {
       return;
     }
     
-    const style = map.getStyle();
-    
-    // Remove existing layers first
-    if (style.layers) {
-      style.layers.forEach((layer: any) => {
+    try {
+      const layers = map.getStyle()?.layers || [];
+      const sources = map.getStyle()?.sources || {};
+      
+      // Remove existing layers first
+      layers.forEach((layer: any) => {
         if (layer.id.startsWith('global-coverage-')) {
           try {
             map.removeLayer(layer.id);
@@ -221,11 +256,9 @@ const GlobalCoverageMapbox: React.FC = () => {
           }
         }
       });
-    }
 
-    // Remove existing sources
-    if (style.sources) {
-      Object.keys(style.sources).forEach((sourceId) => {
+      // Remove existing sources
+      Object.keys(sources).forEach((sourceId) => {
         if (sourceId.startsWith('global-coverage-source-')) {
           try {
             map.removeSource(sourceId);
@@ -234,6 +267,8 @@ const GlobalCoverageMapbox: React.FC = () => {
           }
         }
       });
+    } catch (error) {
+      console.error('Error during cleanup:', error);
     }
   };
 

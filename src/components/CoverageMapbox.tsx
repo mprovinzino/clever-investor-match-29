@@ -67,35 +67,42 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
   };
 
   const addCoverageLayersToMap = (map: any) => {
-    console.log('CoverageMapbox: addCoverageLayersToMap called', { map, mapLoaded: map?.loaded() });
+    console.log('CoverageMapbox: addCoverageLayersToMap called', { 
+      map, 
+      mapLoaded: map?.loaded(), 
+      coverageAreasLength: coverageAreas.length 
+    });
     
-    // Critical safety checks
-    if (!map) {
-      console.error('CoverageMapbox: Map is undefined');
-      return;
-    }
-    
-    if (!map.loaded()) {
-      console.log('CoverageMapbox: Map not yet loaded, deferring');
-      return;
-    }
-    
-    if (!map.getStyle()) {
-      console.log('CoverageMapbox: Map style not ready, deferring');
+    // Simplified safety checks
+    if (!map || !map.loaded()) {
+      console.log('CoverageMapbox: Map not ready, skipping layer addition');
       return;
     }
     
     // First, clean up any existing layers and sources
     cleanupMapSources(map);
     
+    if (coverageAreas.length === 0) {
+      console.log('CoverageMapbox: No coverage areas to display');
+      return;
+    }
+    
+    const bounds = new (window as any).mapboxgl.LngLatBounds();
+    let boundsSet = false;
+    
     // Add coverage areas to the map
-    coverageAreas.forEach((area, index) => {
+    coverageAreas.forEach((area) => {
+      // Validate GeoJSON data
+      if (!area.geojson_data || !area.geojson_data.type) {
+        console.warn('CoverageMapbox: Invalid GeoJSON data for area:', area.area_name);
+        return;
+      }
+      
       const sourceId = `coverage-source-${area.id}`;
       const fillLayerId = `coverage-fill-${area.id}`;
       const lineLayerId = `coverage-line-${area.id}`;
 
-      // Check if source already exists before adding
-      if (!map.getSource(sourceId)) {
+      try {
         // Add source
         map.addSource(sourceId, {
           type: 'geojson',
@@ -125,6 +132,29 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
           }
         });
 
+        // Extend bounds with this area's coordinates
+        if (area.geojson_data.type === 'FeatureCollection') {
+          area.geojson_data.features.forEach((feature: any) => {
+            if (feature.geometry && feature.geometry.coordinates) {
+              const coords = feature.geometry.coordinates;
+              if (feature.geometry.type === 'Polygon') {
+                coords[0].forEach((coord: [number, number]) => {
+                  bounds.extend(coord);
+                  boundsSet = true;
+                });
+              }
+            }
+          });
+        } else if (area.geojson_data.geometry && area.geojson_data.geometry.coordinates) {
+          const coords = area.geojson_data.geometry.coordinates;
+          if (area.geojson_data.geometry.type === 'Polygon') {
+            coords[0].forEach((coord: [number, number]) => {
+              bounds.extend(coord);
+              boundsSet = true;
+            });
+          }
+        }
+
         // Add click handler
         map.on('click', fillLayerId, (e: any) => {
           import('mapbox-gl').then((mapboxgl) => {
@@ -150,23 +180,38 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
         map.on('mouseleave', fillLayerId, () => {
           map.getCanvas().style.cursor = '';
         });
+        
+      } catch (error) {
+        console.error('CoverageMapbox: Error adding coverage area to map:', error, area);
       }
     });
+    
+    // Fit map to show all coverage areas
+    if (boundsSet) {
+      setTimeout(() => {
+        try {
+          map.fitBounds(bounds, { 
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 12 
+          });
+        } catch (error) {
+          console.error('CoverageMapbox: Error fitting bounds:', error);
+        }
+      }, 100);
+    }
   };
 
   const cleanupMapSources = (map: any) => {
-    console.log('CoverageMapbox: cleanupMapSources called', { map, mapLoaded: map?.loaded() });
-    
-    if (!map || !map.loaded() || !map.getStyle()) {
-      console.log('CoverageMapbox: Map not ready for cleanup, skipping');
+    if (!map || !map.loaded()) {
       return;
     }
     
-    const style = map.getStyle();
-    
-    // Remove existing layers first
-    if (style.layers) {
-      style.layers.forEach((layer: any) => {
+    try {
+      const layers = map.getStyle()?.layers || [];
+      const sources = map.getStyle()?.sources || {};
+      
+      // Remove existing layers first
+      layers.forEach((layer: any) => {
         if (layer.id.startsWith('coverage-')) {
           try {
             map.removeLayer(layer.id);
@@ -175,11 +220,9 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
           }
         }
       });
-    }
 
-    // Remove existing sources
-    if (style.sources) {
-      Object.keys(style.sources).forEach((sourceId) => {
+      // Remove existing sources
+      Object.keys(sources).forEach((sourceId) => {
         if (sourceId.startsWith('coverage-source-')) {
           try {
             map.removeSource(sourceId);
@@ -188,6 +231,8 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
           }
         }
       });
+    } catch (error) {
+      console.error('CoverageMapbox: Error during cleanup:', error);
     }
   };
 

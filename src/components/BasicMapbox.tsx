@@ -54,25 +54,20 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
 
         map.current.addControl(new mapboxgl.default.NavigationControl(), 'top-right');
 
-        // Wait for style to be fully loaded before calling onLoad
-        map.current.on('styledata', () => {
-          if (map.current && map.current.loaded() && map.current.isStyleLoaded() && onLoad) {
-            console.log('BasicMapbox: Map style fully loaded, calling onLoad');
+        // Wait for map to be completely ready before calling onLoad
+        map.current.once('idle', () => {
+          if (map.current && onLoad) {
+            console.log('BasicMapbox: Map idle, calling onLoad');
             onLoad(map.current);
           }
         });
 
-        map.current.on('load', () => {
-          console.log('BasicMapbox: Map load event fired');
-          if (map.current && map.current.loaded() && onLoad) {
-            onLoad(map.current);
+        // Force resize after a short delay to ensure proper rendering
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
           }
-        });
-
-        // Add usage tracking for interaction events
-        map.current.on('moveend', () => {
-          // Debounced - only track significant movements
-        });
+        }, 100);
 
       } catch (error) {
         console.error('Failed to load Mapbox:', error);
@@ -113,8 +108,8 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
   }
 
   return (
-    <div style={{ height }} className="relative">
-      <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
+    <div style={{ height }} className="relative w-full">
+      <div ref={mapContainer} className="absolute inset-0 rounded-lg w-full h-full" />
     </div>
   );
 };
