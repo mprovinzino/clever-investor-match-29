@@ -176,4 +176,17 @@
     position: relative !important;
     display: block !important;
   }
+
+  /* Mapbox GL Draw Styles */
+  .mapbox-gl-draw_ctrl-draw-btn {
+    display: none !important;
+  }
+  
+  .mapbox-gl-draw_polygon {
+    cursor: crosshair !important;
+  }
+  
+  .mapbox-gl-draw_trash {
+    display: none !important;
+  }
 }

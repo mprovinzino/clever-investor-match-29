@@ -36,8 +36,9 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
         }
 
         // Dynamically import mapbox to prevent React conflicts
-        const mapboxgl = await import('mapbox-gl');
-        await import('mapbox-gl/dist/mapbox-gl.css');
+      const mapboxgl = await import('mapbox-gl');
+      await import('mapbox-gl/dist/mapbox-gl.css');
+      await import('@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css');
         
         mapboxgl.default.accessToken = mapboxToken;
       

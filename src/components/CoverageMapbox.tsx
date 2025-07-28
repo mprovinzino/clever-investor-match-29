@@ -3,8 +3,11 @@ import BasicMapbox from './BasicMapbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Edit3 } from 'lucide-react';
+import { MapPin, Edit3, Trash2, PenTool, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import MapboxDraw from '@mapbox/mapbox-gl-draw';
 
 interface CoverageMapboxProps {
   investorId: number;
@@ -23,7 +26,12 @@ interface CoverageArea {
 const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = false }) => {
   const [coverageAreas, setCoverageAreas] = useState<CoverageArea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [areaName, setAreaName] = useState('');
+  const [drawnFeature, setDrawnFeature] = useState<any>(null);
   const mapRef = useRef<any>(null);
+  const drawRef = useRef<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,14 +63,185 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
   };
 
   const handleCreateArea = () => {
+    if (!mapRef.current || !drawRef.current) return;
+    
+    setIsDrawing(true);
+    drawRef.current.changeMode('draw_polygon');
+    
     toast({
-      title: "Drawing Feature",
-      description: "Drawing tools will be available soon",
+      title: "Drawing Mode",
+      description: "Click on the map to start drawing your coverage area",
     });
+  };
+
+  const handleCancelDrawing = () => {
+    if (!drawRef.current) return;
+    
+    setIsDrawing(false);
+    drawRef.current.deleteAll();
+    drawRef.current.changeMode('simple_select');
+  };
+
+  const handleSaveArea = async () => {
+    if (!drawnFeature || !areaName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide an area name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('coverage_areas')
+        .insert({
+          investor_id: investorId,
+          area_name: areaName.trim(),
+          geojson_data: drawnFeature
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCoverageAreas([...coverageAreas, data]);
+      setShowSaveDialog(false);
+      setAreaName('');
+      setDrawnFeature(null);
+      setIsDrawing(false);
+      
+      if (drawRef.current) {
+        drawRef.current.deleteAll();
+        drawRef.current.changeMode('simple_select');
+      }
+
+      toast({
+        title: "Success",
+        description: "Coverage area saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving coverage area:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save coverage area",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteArea = async (areaId: string) => {
+    try {
+      const { error } = await supabase
+        .from('coverage_areas')
+        .delete()
+        .eq('id', areaId);
+
+      if (error) throw error;
+
+      setCoverageAreas(coverageAreas.filter(area => area.id !== areaId));
+      
+      toast({
+        title: "Success",
+        description: "Coverage area deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting coverage area:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete coverage area",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleMapLoad = (map: any) => {
     mapRef.current = map;
+    
+    // Initialize Mapbox Draw
+    if (editable) {
+      const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: {},
+        styles: [
+          // Style for polygons being drawn
+          {
+            'id': 'gl-draw-polygon-fill-inactive',
+            'type': 'fill',
+            'filter': ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+            'paint': {
+              'fill-color': '#3b82f6',
+              'fill-outline-color': '#1d4ed8',
+              'fill-opacity': 0.3
+            }
+          },
+          {
+            'id': 'gl-draw-polygon-fill-active',
+            'type': 'fill',
+            'filter': ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
+            'paint': {
+              'fill-color': '#ef4444',
+              'fill-outline-color': '#dc2626',
+              'fill-opacity': 0.3
+            }
+          },
+          {
+            'id': 'gl-draw-polygon-stroke-inactive',
+            'type': 'line',
+            'filter': ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+            'paint': {
+              'line-color': '#1d4ed8',
+              'line-width': 2
+            }
+          },
+          {
+            'id': 'gl-draw-polygon-stroke-active',
+            'type': 'line',
+            'filter': ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
+            'paint': {
+              'line-color': '#dc2626',
+              'line-width': 2
+            }
+          },
+          // Style for polygon vertices
+          {
+            'id': 'gl-draw-polygon-and-line-vertex-halo-active',
+            'type': 'circle',
+            'filter': ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
+            'paint': {
+              'circle-radius': 5,
+              'circle-color': '#ffffff'
+            }
+          },
+          {
+            'id': 'gl-draw-polygon-and-line-vertex-active',
+            'type': 'circle',
+            'filter': ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
+            'paint': {
+              'circle-radius': 3,
+              'circle-color': '#dc2626'
+            }
+          }
+        ]
+      });
+      
+      map.addControl(draw);
+      drawRef.current = draw;
+      
+      // Listen for drawing completion
+      map.on('draw.create', (e: any) => {
+        const feature = e.features[0];
+        setDrawnFeature(feature);
+        setShowSaveDialog(true);
+      });
+      
+      // Listen for drawing updates
+      map.on('draw.update', (e: any) => {
+        const feature = e.features[0];
+        setDrawnFeature(feature);
+      });
+    }
+    
     addCoverageLayersToMap(map);
   };
 
@@ -158,14 +337,20 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
         // Add click handler
         map.on('click', fillLayerId, (e: any) => {
           import('mapbox-gl').then((mapboxgl) => {
-            new mapboxgl.default.Popup()
+            const popup = new mapboxgl.default.Popup()
             .setLngLat(e.lngLat)
             .setHTML(`
               <div class="p-3 min-w-48">
                 <h3 class="font-semibold text-sm mb-2">${area.area_name}</h3>
-                <p class="text-xs text-muted-foreground">
+                <p class="text-xs text-muted-foreground mb-2">
                   Created: ${new Date(area.created_at).toLocaleDateString()}
                 </p>
+                ${editable ? `
+                  <button onclick="window.deleteArea?.('${area.id}')" 
+                          class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
+                    Delete Area
+                  </button>
+                ` : ''}
               </div>
             `)
               .addTo(map);
@@ -252,6 +437,16 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
     }
   }, [coverageAreas, loading]);
 
+  // Set up global delete function for popup
+  useEffect(() => {
+    if (editable) {
+      (window as any).deleteArea = handleDeleteArea;
+      return () => {
+        delete (window as any).deleteArea;
+      };
+    }
+  }, [handleDeleteArea, editable]);
+
   if (loading) {
     return (
       <Card>
@@ -263,28 +458,80 @@ const CoverageMapbox: React.FC<CoverageMapboxProps> = ({ investorId, editable = 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          Coverage Areas
-          {editable && (
-            <div className="ml-auto flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleCreateArea}>
-                <Edit3 className="h-4 w-4 mr-1" />
-                Add Area
-              </Button>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Coverage Areas
+            {editable && (
+              <div className="ml-auto flex gap-2">
+                {isDrawing ? (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleCancelDrawing}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleCreateArea}>
+                    <PenTool className="h-4 w-4 mr-1" />
+                    Draw Area
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardTitle>
+          {isDrawing && (
+            <div className="text-sm text-muted-foreground">
+              Click on the map to start drawing your coverage area. Complete the polygon by clicking on the first point.
             </div>
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <BasicMapbox 
-          height="500px"
-          onLoad={handleMapLoad}
-        />
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          <BasicMapbox 
+            height="500px"
+            onLoad={handleMapLoad}
+          />
+          {coverageAreas.length > 0 && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              {coverageAreas.length} coverage area{coverageAreas.length !== 1 ? 's' : ''} defined
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Coverage Area</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Area Name</label>
+              <Input
+                value={areaName}
+                onChange={(e) => setAreaName(e.target.value)}
+                placeholder="Enter a name for this coverage area"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => {
+                setShowSaveDialog(false);
+                handleCancelDrawing();
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveArea} disabled={!areaName.trim()}>
+                <Save className="h-4 w-4 mr-1" />
+                Save Area
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
