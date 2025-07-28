@@ -54,8 +54,17 @@ const BasicMapbox: React.FC<BasicMapboxProps> = ({
 
         map.current.addControl(new mapboxgl.default.NavigationControl(), 'top-right');
 
+        // Wait for style to be fully loaded before calling onLoad
+        map.current.on('styledata', () => {
+          if (map.current && map.current.loaded() && map.current.isStyleLoaded() && onLoad) {
+            console.log('BasicMapbox: Map style fully loaded, calling onLoad');
+            onLoad(map.current);
+          }
+        });
+
         map.current.on('load', () => {
-          if (map.current && onLoad) {
+          console.log('BasicMapbox: Map load event fired');
+          if (map.current && map.current.loaded() && onLoad) {
             onLoad(map.current);
           }
         });

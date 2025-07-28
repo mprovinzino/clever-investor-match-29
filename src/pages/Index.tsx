@@ -3,16 +3,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, Target, MessageSquare, Plus, TrendingUp, MapPin } from "lucide-react";
+import { Building2, Users, Target, MessageSquare, Plus, TrendingUp, MapPin, Settings } from "lucide-react";
 import InvestorsTable from "@/components/InvestorsTable";
 import PropertiesTable from "@/components/PropertiesTable";
 import MatchesTable from "@/components/MatchesTable";
 import DashboardStats from "@/components/DashboardStats";
 import GlobalCoverageMapbox from "@/components/GlobalCoverageMapbox";
-import MapboxUsageDashboard from "@/components/MapboxUsageDashboard";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -30,6 +31,15 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
               <Badge variant="secondary" className="bg-success/10 text-success">
                 Platform Active
               </Badge>
@@ -76,7 +86,6 @@ const Index = () => {
               </div>
             </div>
             <DashboardStats />
-            <MapboxUsageDashboard />
           </TabsContent>
 
           {/* Investors Tab */}
