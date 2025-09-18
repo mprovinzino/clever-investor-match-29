@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      coverage_areas: {
+        Row: {
+          area_name: string
+          created_at: string
+          geojson_data: Json
+          id: string
+          investor_id: string
+          updated_at: string
+        }
+        Insert: {
+          area_name: string
+          created_at?: string
+          geojson_data: Json
+          id?: string
+          investor_id: string
+          updated_at?: string
+        }
+        Update: {
+          area_name?: string
+          created_at?: string
+          geojson_data?: Json
+          id?: string
+          investor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_areas_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investor_applications: {
         Row: {
           acquisition_strategies: string[] | null
@@ -110,6 +145,42 @@ export type Database = {
           wholesale_deals?: number | null
           year_built_max?: number | null
           year_built_min?: number | null
+        }
+        Relationships: []
+      }
+      investors: {
+        Row: {
+          company_name: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone_number: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone_number: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone_number?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -30,8 +30,8 @@ export const InvestorProfileModal = ({ investor, isOpen, onClose, onEditInvestor
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Building className="h-6 w-6" />
-            {investor["Company Name"]}
-            <Badge variant="secondary">Tier {investor.Tier}</Badge>
+            {investor.company_name}
+            <Badge variant="secondary">{investor.status}</Badge>
           </DialogTitle>
           <DialogDescription>
             View and manage investor profile and buy box criteria

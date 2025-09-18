@@ -14,7 +14,7 @@ import {
 
 interface CoverageArea {
   id: string;
-  investor_id: number;
+  investor_id: string;
   area_name: string;
   geojson_data: any;
   created_at: string;
@@ -22,9 +22,10 @@ interface CoverageArea {
 }
 
 interface Investor {
-  ID: number;
-  "Company Name": string;
-  Tier: number;
+  id: string;
+  company_name: string;
+  first_name: string;
+  last_name: string;
 }
 
 const GlobalCoverageMapbox: React.FC = () => {
@@ -58,8 +59,8 @@ const GlobalCoverageMapbox: React.FC = () => {
 
       // Load investors
       const { data: investorData, error: investorError } = await supabase
-        .from('Investor Network')
-        .select('ID, "Company Name", Tier');
+        .from('investors')
+        .select('id, company_name, first_name, last_name');
 
       if (investorError) {
         throw investorError;
@@ -81,16 +82,16 @@ const GlobalCoverageMapbox: React.FC = () => {
 
   const filteredAreas = selectedInvestor === 'all' 
     ? coverageAreas 
-    : coverageAreas.filter(area => area.investor_id.toString() === selectedInvestor);
+    : coverageAreas.filter(area => area.investor_id === selectedInvestor);
 
-  const getInvestorColor = (investorId: number) => {
-    const index = investors.findIndex(inv => inv.ID === investorId);
+  const getInvestorColor = (investorId: string) => {
+    const index = investors.findIndex(inv => inv.id === investorId);
     return colors[index % colors.length];
   };
 
-  const getInvestorName = (investorId: number) => {
-    const investor = investors.find(inv => inv.ID === investorId);
-    return investor ? investor['Company Name'] : 'Unknown Investor';
+  const getInvestorName = (investorId: string) => {
+    const investor = investors.find(inv => inv.id === investorId);
+    return investor ? investor.company_name : 'Unknown Investor';
   };
 
   const handleMapLoad = (map: any) => {
@@ -313,8 +314,8 @@ const GlobalCoverageMapbox: React.FC = () => {
               <SelectContent>
                 <SelectItem value="all">All Investors</SelectItem>
                 {investors.map((investor) => (
-                  <SelectItem key={investor.ID} value={investor.ID.toString()}>
-                    {investor['Company Name']}
+                  <SelectItem key={investor.id} value={investor.id}>
+                    {investor.company_name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -327,7 +328,7 @@ const GlobalCoverageMapbox: React.FC = () => {
           <Users className="h-4 w-4" />
           Showing {filteredAreas.length} coverage areas
           {selectedInvestor !== 'all' && (
-            <span>for {getInvestorName(parseInt(selectedInvestor))}</span>
+            <span>for {getInvestorName(selectedInvestor)}</span>
           )}
         </div>
         

@@ -9,9 +9,9 @@ const DashboardStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      // Only query the Investor Network table since other tables don't exist yet
+      // Query the investors table
       const investorsResult = await supabase
-        .from("Investor Network")
+        .from("investors")
         .select("*", { count: "exact" });
 
       // For now, return 0 for properties and matches since those tables don't exist

@@ -10,13 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 
 interface CoverageMapboxProps {
-  investorId: number;
+  investorId: string;
   editable?: boolean;
 }
 
 interface CoverageArea {
   id: string;
-  investor_id: number;
+  investor_id: string;
   area_name: string;
   geojson_data: any;
   created_at: string;

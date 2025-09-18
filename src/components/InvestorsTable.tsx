@@ -22,9 +22,9 @@ const InvestorsTable = () => {
     queryFn: async () => {
       console.log("Fetching investors...");
       const { data, error } = await supabase
-        .from("Investor Network")
+        .from("investors")
         .select("*")
-        .order("ID", { ascending: false });
+        .order("id", { ascending: false });
       
       console.log("Investors data:", data);
       console.log("Investors error:", error);
@@ -35,9 +35,10 @@ const InvestorsTable = () => {
   });
 
   const filteredInvestors = investors?.filter((investor: any) =>
-    investor["Company Name"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    investor["Main POC"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    investor["Primary Markets"]?.toLowerCase().includes(searchTerm.toLowerCase())
+    investor.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    investor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    investor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    investor.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const handleEditInvestor = (investor: any) => {
@@ -131,7 +132,7 @@ const InvestorsTable = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredInvestors.map((investor: any) => (
                 <InvestorCard
-                  key={investor.ID}
+                  key={investor.id}
                   investor={investor}
                   onViewProfile={(investor) => setSelectedInvestor(investor)}
                   onEditInvestor={handleEditInvestor}
