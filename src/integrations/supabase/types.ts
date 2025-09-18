@@ -7,160 +7,109 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      coverage_areas: {
+      investor_applications: {
         Row: {
-          area_name: string
-          area_type: string
+          acquisition_strategies: string[] | null
+          budget_max: number | null
+          budget_min: number | null
+          cash_purchase_deals: number | null
+          company_name: string
           created_at: string
-          geojson_data: Json
+          creative_financing_deals: number | null
+          direct_purchase_markets: string | null
+          email: string
+          first_name: string
           id: string
-          investor_id: number
-          updated_at: string
-        }
-        Insert: {
-          area_name: string
-          area_type?: string
-          created_at?: string
-          geojson_data: Json
-          id?: string
-          investor_id: number
-          updated_at?: string
-        }
-        Update: {
-          area_name?: string
-          area_type?: string
-          created_at?: string
-          geojson_data?: Json
-          id?: string
-          investor_id?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      "Investor Network": {
-        Row: {
-          "Buy Box": string
-          Cold: string
-          "Company Name": string
-          "Coverage Type": string
-          "Direct Purchase": string
-          "HS Company URL": string
-          ID: number
-          investment_strategies: string[] | null
-          "Investor Tags": string
-          "Main POC": string
-          max_price: number | null
-          max_sqft: number | null
-          max_year_built: number | null
-          min_price: number | null
-          min_sqft: number | null
-          min_year_built: number | null
-          Notes: string | null
-          "Offer Types": string
-          "Primary Markets": string
-          property_conditions: string[] | null
+          last_name: string
+          listing_status: string[] | null
+          novation_deals: number | null
+          other_preferences: string | null
+          phone_number: string
+          previous_experience_files: string[] | null
+          primary_markets: string | null
+          property_condition: string[] | null
           property_types: string[] | null
-          "Reason for Freeze": string
-          "Secondary Markets": string
-          Tier: number
-          timeline_preferences: string[] | null
-          user_id: string | null
-          "Weekly Cap": number
-          "Zip Codes": string | null
-        }
-        Insert: {
-          "Buy Box": string
-          Cold: string
-          "Company Name": string
-          "Coverage Type": string
-          "Direct Purchase": string
-          "HS Company URL": string
-          ID?: number
-          investment_strategies?: string[] | null
-          "Investor Tags": string
-          "Main POC": string
-          max_price?: number | null
-          max_sqft?: number | null
-          max_year_built?: number | null
-          min_price?: number | null
-          min_sqft?: number | null
-          min_year_built?: number | null
-          Notes?: string | null
-          "Offer Types": string
-          "Primary Markets": string
-          property_conditions?: string[] | null
-          property_types?: string[] | null
-          "Reason for Freeze": string
-          "Secondary Markets": string
-          Tier: number
-          timeline_preferences?: string[] | null
-          user_id?: string | null
-          "Weekly Cap": number
-          "Zip Codes"?: string | null
-        }
-        Update: {
-          "Buy Box"?: string
-          Cold?: string
-          "Company Name"?: string
-          "Coverage Type"?: string
-          "Direct Purchase"?: string
-          "HS Company URL"?: string
-          ID?: number
-          investment_strategies?: string[] | null
-          "Investor Tags"?: string
-          "Main POC"?: string
-          max_price?: number | null
-          max_sqft?: number | null
-          max_year_built?: number | null
-          min_price?: number | null
-          min_sqft?: number | null
-          min_year_built?: number | null
-          Notes?: string | null
-          "Offer Types"?: string
-          "Primary Markets"?: string
-          property_conditions?: string[] | null
-          property_types?: string[] | null
-          "Reason for Freeze"?: string
-          "Secondary Markets"?: string
-          Tier?: number
-          timeline_preferences?: string[] | null
-          user_id?: string | null
-          "Weekly Cap"?: number
-          "Zip Codes"?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          company: string | null
-          created_at: string
-          email: string | null
-          full_name: string | null
-          id: string
+          secondary_markets: string | null
+          statewide_coverage: string[] | null
+          status: string
+          sub_to_deals: number | null
+          text_consent: boolean | null
+          timeframe: string[] | null
           updated_at: string
+          wholesale_deals: number | null
+          year_built_max: number | null
+          year_built_min: number | null
         }
         Insert: {
-          company?: string | null
+          acquisition_strategies?: string[] | null
+          budget_max?: number | null
+          budget_min?: number | null
+          cash_purchase_deals?: number | null
+          company_name: string
           created_at?: string
-          email?: string | null
-          full_name?: string | null
-          id: string
+          creative_financing_deals?: number | null
+          direct_purchase_markets?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          listing_status?: string[] | null
+          novation_deals?: number | null
+          other_preferences?: string | null
+          phone_number: string
+          previous_experience_files?: string[] | null
+          primary_markets?: string | null
+          property_condition?: string[] | null
+          property_types?: string[] | null
+          secondary_markets?: string | null
+          statewide_coverage?: string[] | null
+          status?: string
+          sub_to_deals?: number | null
+          text_consent?: boolean | null
+          timeframe?: string[] | null
           updated_at?: string
+          wholesale_deals?: number | null
+          year_built_max?: number | null
+          year_built_min?: number | null
         }
         Update: {
-          company?: string | null
+          acquisition_strategies?: string[] | null
+          budget_max?: number | null
+          budget_min?: number | null
+          cash_purchase_deals?: number | null
+          company_name?: string
           created_at?: string
-          email?: string | null
-          full_name?: string | null
+          creative_financing_deals?: number | null
+          direct_purchase_markets?: string | null
+          email?: string
+          first_name?: string
           id?: string
+          last_name?: string
+          listing_status?: string[] | null
+          novation_deals?: number | null
+          other_preferences?: string | null
+          phone_number?: string
+          previous_experience_files?: string[] | null
+          primary_markets?: string | null
+          property_condition?: string[] | null
+          property_types?: string[] | null
+          secondary_markets?: string | null
+          statewide_coverage?: string[] | null
+          status?: string
+          sub_to_deals?: number | null
+          text_consent?: boolean | null
+          timeframe?: string[] | null
           updated_at?: string
+          wholesale_deals?: number | null
+          year_built_max?: number | null
+          year_built_min?: number | null
         }
         Relationships: []
       }
@@ -169,10 +118,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_match_score: {
-        Args: { p_property_id: string; p_investor_id: number }
-        Returns: number
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
