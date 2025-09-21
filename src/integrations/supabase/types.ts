@@ -21,7 +21,9 @@ export type Database = {
           geojson_data: Json
           id: string
           investor_id: string
+          market_type: string | null
           updated_at: string
+          zip_codes: string[] | null
         }
         Insert: {
           area_name: string
@@ -29,7 +31,9 @@ export type Database = {
           geojson_data: Json
           id?: string
           investor_id: string
+          market_type?: string | null
           updated_at?: string
+          zip_codes?: string[] | null
         }
         Update: {
           area_name?: string
@@ -37,7 +41,9 @@ export type Database = {
           geojson_data?: Json
           id?: string
           investor_id?: string
+          market_type?: string | null
           updated_at?: string
+          zip_codes?: string[] | null
         }
         Relationships: [
           {
@@ -150,37 +156,64 @@ export type Database = {
       }
       investors: {
         Row: {
+          buy_box: string | null
           company_name: string
+          coverage_type: string | null
           created_at: string
           email: string
+          external_id: string | null
           first_name: string
+          hubspot_url: string | null
           id: string
+          investor_tags: string[] | null
+          is_cold: boolean | null
           last_name: string
+          offer_types: string[] | null
           phone_number: string
           status: string
+          tier: number | null
           updated_at: string
+          weekly_cap: number | null
         }
         Insert: {
+          buy_box?: string | null
           company_name: string
+          coverage_type?: string | null
           created_at?: string
           email: string
+          external_id?: string | null
           first_name: string
+          hubspot_url?: string | null
           id?: string
+          investor_tags?: string[] | null
+          is_cold?: boolean | null
           last_name: string
+          offer_types?: string[] | null
           phone_number: string
           status?: string
+          tier?: number | null
           updated_at?: string
+          weekly_cap?: number | null
         }
         Update: {
+          buy_box?: string | null
           company_name?: string
+          coverage_type?: string | null
           created_at?: string
           email?: string
+          external_id?: string | null
           first_name?: string
+          hubspot_url?: string | null
           id?: string
+          investor_tags?: string[] | null
+          is_cold?: boolean | null
           last_name?: string
+          offer_types?: string[] | null
           phone_number?: string
           status?: string
+          tier?: number | null
           updated_at?: string
+          weekly_cap?: number | null
         }
         Relationships: []
       }
