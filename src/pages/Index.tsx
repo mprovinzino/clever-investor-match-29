@@ -9,6 +9,7 @@ import PropertiesTable from "@/components/PropertiesTable";
 import MatchesTable from "@/components/MatchesTable";
 import DashboardStats from "@/components/DashboardStats";
 import GlobalCoverageMapbox from "@/components/GlobalCoverageMapbox";
+import { InvestorDataImport } from "@/components/InvestorDataImport";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
@@ -85,7 +86,11 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <DashboardStats />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <DashboardStats />
+              <InvestorDataImport />
+            </div>
           </TabsContent>
 
           {/* Investors Tab */}
